@@ -1,33 +1,37 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { StyleSheet, View, Button } from 'react-native';
-import { PositionChangeEvent, SheetDetent, TrueSheet } from '@lodev09/react-native-true-sheet';
+import { TrueSheet } from '@lodev09/react-native-true-sheet';
+import { ReanimatedTrueSheet, ReanimatedTrueSheetProvider, useReanimatedTrueSheet } from '@lodev09/react-native-true-sheet/reanimated';
+import Animated, { clamp, useAnimatedReaction, useAnimatedStyle } from 'react-native-reanimated';
 
 export default function App() {
-  const sheetRef = useRef<TrueSheet>(null);
-  const [detents, setDetents] = useState<(SheetDetent)[]>([0.4, 1]);
+  return (
+    <ReanimatedTrueSheetProvider>
+      <Comp />
+    </ReanimatedTrueSheetProvider>
+  );
+}
 
-  const onPositionChange = (event: PositionChangeEvent) => {
-    console.log('position', event.nativeEvent.detent);
-  };
+const Comp = () => {
+  const sheetRef = useRef<TrueSheet>(null);
+  const { animatedIndex } = useReanimatedTrueSheet()
+
+  useAnimatedReaction(() => animatedIndex.value, (value) => console.log(value))
 
   const openSheet = async () => {
-    setTimeout(() => {
-      setDetents([0.5, 1]);
-    }, 0);
-    await sheetRef.current?.present();
+    sheetRef.current?.present();
   };
 
-  const onWillDismiss = () => {
-    setDetents([0.4, 1]);
-  };
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: clamp(animatedIndex.value, 0, 1)
+  }));
 
   return (
     <View style={styles.container}>
       <Button title="Open Sheet" onPress={openSheet} />
-
-      <TrueSheet ref={sheetRef} detents={detents} onPositionChange={onPositionChange} onWillDismiss={onWillDismiss}>
-        <View style={styles.sheetContainer} />
-      </TrueSheet>
+      <ReanimatedTrueSheet ref={sheetRef} detents={[0.4, 1]}>
+        <Animated.View style={[styles.sheetContainer, animatedStyle]} />
+      </ReanimatedTrueSheet>
     </View>
   );
 }
